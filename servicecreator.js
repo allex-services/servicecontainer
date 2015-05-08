@@ -1,7 +1,7 @@
 function createServiceContainerService(execlib,ParentServicePack){
   var ParentService = ParentServicePack.Service,
     dataSuite = execlib.dataSuite,
-    NullStorage = dataSuite.NullStorage;
+    MemoryStorage = dataSuite.MemoryStorage;
 
   function factoryCreator(parentFactory){
     return {
@@ -18,7 +18,7 @@ function createServiceContainerService(execlib,ParentServicePack){
     ParentService.prototype.__cleanUp.call(this);
   };
   ServiceContainerService.prototype.createStorage = function(){
-    return new NullStorage;
+    return new MemoryStorage;
   };
   return ServiceContainerService;
 }
