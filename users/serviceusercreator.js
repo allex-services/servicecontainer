@@ -24,7 +24,6 @@ function createServiceUser(execlib,ParentUser){
   };
   ServiceUser.prototype._onSinkAcquired = function(defer,record,sink){
     record.closed = false;
-    console.log('create?',this.__service.data.create.toString());
     this.__service.data.create(record).done(
       this._onServiceRecordCreated.bind(this,defer,sink),
       defer.reject.bind(defer)
