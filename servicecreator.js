@@ -13,12 +13,12 @@ function createServiceContainerService(execlib,ParentServicePack){
   function ServiceContainerService(prophash){
     ParentService.call(this,prophash);
   }
-  ParentService.inherit(ServiceContainerService,factoryCreator,require('./recorddescriptor'));
+  ParentService.inherit(ServiceContainerService,factoryCreator,require('./storagedescriptor'));
   ServiceContainerService.prototype.__cleanUp = function(){
     ParentService.prototype.__cleanUp.call(this);
   };
-  ServiceContainerService.prototype.createStorage = function(){
-    return new MemoryStorage;
+  ServiceContainerService.prototype.createStorage = function(storagedescriptor){
+    return new MemoryStorage(storagedescriptor);
   };
   return ServiceContainerService;
 }

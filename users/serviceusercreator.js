@@ -14,27 +14,25 @@ function createServiceUser(execlib,ParentUser){
   ServiceUser.prototype.__cleanUp = function(){
     ParentUser.prototype.__cleanUp.call(this);
   };
-  ServiceUser.prototype.spawn = function(instancename,modulename,prophash,strategieshash,defer){
-    console.log('ServiceContainer should spawn',instancename,modulename);
+  ServiceUser.prototype.spawn = function(spawndescriptor,defer){
     var d = q.defer();
-    this.acquireSink(instancename,modulename,prophash,strategieshash,d);
+    this.acquireSink(spawndescriptor,d);
     d.promise.done(
-      this._onSinkAcquired.bind(this,defer,{
-        instancename:instancename,
-        modulename:modulename,
-        prophash:prophash,
-        strategies:strategieshash,
-        closed:false
-      }),
+      this._onSinkAcquired.bind(this,defer,spawndescriptor),
       defer.reject.bind(defer)
     );
   };
   ServiceUser.prototype._onSinkAcquired = function(defer,record,sink){
-    console.log('sink acquired',sink);
-    sink.consumeChannel('s',function(item){
-      console.log('sub-sink state',item);
-    });
-    this.__service.data.create(record);
+    record.closed = false;
+    console.log('create?',this.__service.data.create.toString());
+    this.__service.data.create(record).done(
+      this._onServiceRecordCreated.bind(this,defer,sink),
+      defer.reject.bind(defer)
+    );
+  };
+  ServiceUser.prototype._onServiceRecordCreated = function(defer,sink,record){
+    sink.consumeChannel('s',sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
+    defer.resolve(record);
   };
 
   return ServiceUser;
