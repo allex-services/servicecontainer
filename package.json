@@ -15,10 +15,6 @@
     "Service",
     "ServiceContainer"
   ],
-  "dependencies" : {
-    "allexcore": "git+ssh://git@gitlab.hers.rs/allex/core",
-    "allex_dataservice": "git+ssh://git@gitlab.hers.rs/allex_services/data"
-    },
   "author": "HERS Belgrade",
   "license": "ISC"
 }
