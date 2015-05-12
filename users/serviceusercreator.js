@@ -15,6 +15,7 @@ function createServiceUser(execlib,ParentUser){
     ParentUser.prototype.__cleanUp.call(this);
   };
   ServiceUser.prototype.spawn = function(spawndescriptor,defer){
+    console.log('spawn!',spawndescriptor);
     var d = q.defer();
     this.acquireSink(spawndescriptor,d);
     d.promise.done(
@@ -22,7 +23,8 @@ function createServiceUser(execlib,ParentUser){
       defer.reject.bind(defer)
     );
   };
-  ServiceUser.prototype._onSinkAcquired = function(defer,record,sink){
+  ServiceUser.prototype._onSinkAcquired = function(defer,spawndescriptor,sink){
+    var record = this._spawnDescriptorToRecord(spawndescriptor);
     record.closed = false;
     this.__service.data.create(record).done(
       this._onServiceRecordCreated.bind(this,defer,sink),
@@ -32,6 +34,9 @@ function createServiceUser(execlib,ParentUser){
   ServiceUser.prototype._onServiceRecordCreated = function(defer,sink,record){
     sink.consumeChannel('s',sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
     defer.resolve(record);
+  };
+  ServiceUser.prototype._spawnDescriptorToRecord = function(spawndescriptor){
+    return spawndescriptor;
   };
 
   return ServiceUser;
