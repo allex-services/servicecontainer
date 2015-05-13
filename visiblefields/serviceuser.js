@@ -1,7 +1,7 @@
 module.exports = [
   'instancename',
   'modulename',
-  'prophash',
+  'propertyhash',
   'strategies',
   'closed'
 ];
