@@ -7,7 +7,7 @@ function createUserSink(execlib,ParentSink){
   function UserSink(prophash,client){
     ParentSink.call(this,prophash,client);
   }
-  ParentSink.inherit(UserSink,require('../methoddescriptors/user'),require('../visiblefields/user'));
+  ParentSink.inherit(UserSink,require('../methoddescriptors/user'),require('../visiblefields/user'),require('../storagedescriptor'));
   UserSink.prototype.__cleanUp = function(){
     ParentSink.prototype.__cleanUp.call(this);
   };
