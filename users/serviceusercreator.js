@@ -1,7 +1,9 @@
 function createServiceUser(execlib,ParentUser){
 
   var lib = execlib.lib,
-      q = lib.q;
+      q = lib.q,
+      execSuite = execlib.execSuite,
+      taskRegistry = execSuite.taskRegistry;
 
   if(!ParentUser){
     ParentUser = execlib.execSuite.ServicePack.Service.prototype.userFactory.get('user');
@@ -38,8 +40,15 @@ function createServiceUser(execlib,ParentUser){
   };
   ServiceUser.prototype._onServiceRecordCreated = function(defer,sink,record){
     console.log('record created',record,'from',this.__service.modulename);
-    sink.consumeChannel('s',sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
+    //sink.consumeChannel('s',sink.extendTo(this.__service.data.stateStreamFilterForRecord(record))); //extendTo might be an overkill here?
+    var state = taskRegistry.run('materializeState',{
+      sink: sink
+    });
+    this._onSubServiceState(state);
     defer.resolve(record);
+  };
+  ServiceUser.prototype._onSubServiceState = function(state){
+    state.setSink(sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
   };
   ServiceUser.prototype._instanceNameFromRecord = function(record){
     return record.instancename;
