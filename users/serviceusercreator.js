@@ -49,7 +49,7 @@ function createServiceUser(execlib,ParentUser){
       sink: sink
     });
     this._onSubServiceState(state,record);
-    defer.resolve(record);
+    defer.resolve(sink);
   };
   ServiceUser.prototype._onSubServiceState = function(state,record){
     state.setSink(state.sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
