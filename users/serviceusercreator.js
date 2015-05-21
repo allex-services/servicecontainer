@@ -3,7 +3,9 @@ function createServiceUser(execlib,ParentUser){
   var lib = execlib.lib,
       q = lib.q,
       execSuite = execlib.execSuite,
-      taskRegistry = execSuite.taskRegistry;
+      taskRegistry = execSuite.taskRegistry,
+      dataSuite = execlib.dataSuite,
+      filterFactory = dataSuite.filterFactory;
 
   if(!ParentUser){
     ParentUser = execlib.execSuite.ServicePack.Service.prototype.userFactory.get('user');
@@ -12,49 +14,59 @@ function createServiceUser(execlib,ParentUser){
   function ServiceUser(prophash){
     ParentUser.call(this,prophash);
   }
-  ParentUser.inherit(ServiceUser,require('../methoddescriptors/serviceuser'),require('../visiblefields/serviceuser'));
+  ParentUser.inherit(ServiceUser,require('../methoddescriptors/serviceuser'),[],require('../visiblefields/serviceuser'));
   ServiceUser.prototype.__cleanUp = function(){
     ParentUser.prototype.__cleanUp.call(this);
   };
   ServiceUser.prototype.spawn = function(spawndescriptor,defer){
-    console.log('spawn!',spawndescriptor);
     var d = q.defer();
-    this.acquireSink(spawndescriptor,d);
+    var record = this._spawnDescriptorToRecord(spawndescriptor);
+    var sinkinstancename = this._instanceNameFromRecord(record);
+    if(!sinkinstancename){
+      defer.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
+      return;
+    }
+    this.acquireSink(record,d);
     d.promise.done(
-      this._onSinkAcquired.bind(this,defer,spawndescriptor),
+      this._onSinkAcquired.bind(this,defer,record),
       defer.reject.bind(defer)
     );
   };
-  ServiceUser.prototype._onSinkAcquired = function(defer,spawndescriptor,sink){
-    var record = this._spawnDescriptorToRecord(spawndescriptor);
-    record.closed = false;
+  ServiceUser.prototype._onSinkAcquired = function(defer,record,sink){
     var sinkinstancename = this._instanceNameFromRecord(record);
     if(sinkinstancename){
       this.__service.subservices.add(sinkinstancename,sink);
+      sink.destroyed.attachForSingleShot(this._onSubServiceDown.bind(this,sinkinstancename,record));
     }
-    console.log('creating record from',record);
     this.__service.data.create(record).done(
       this._onServiceRecordCreated.bind(this,defer,sink),
       defer.reject.bind(defer)
     );
   };
   ServiceUser.prototype._onServiceRecordCreated = function(defer,sink,record){
-    console.log('record created',record,'from',this.__service.modulename);
     //sink.consumeChannel('s',sink.extendTo(this.__service.data.stateStreamFilterForRecord(record))); //extendTo might be an overkill here?
     var state = taskRegistry.run('materializeState',{
       sink: sink
     });
-    this._onSubServiceState(state);
+    this._onSubServiceState(state,record);
     defer.resolve(record);
   };
-  ServiceUser.prototype._onSubServiceState = function(state){
-    state.setSink(sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
+  ServiceUser.prototype._onSubServiceState = function(state,record){
+    state.setSink(state.sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
+  };
+  ServiceUser.prototype._onSubServiceDown = function(sinkinstancename,record){
+    this.__service.subservices.remove(sinkinstancename);
+    this.__service.data.delete(filterFactory.createFromDescriptor({
+      op:'hash',
+      d:record
+    }));
   };
   ServiceUser.prototype._instanceNameFromRecord = function(record){
-    return record.instancename;
+    return record.get('instancename');
   };
   ServiceUser.prototype._spawnDescriptorToRecord = function(spawndescriptor){
-    return spawndescriptor;
+    var record = new (dataSuite.recordSuite.Record)(this.__service.storageDescriptor.record);
+    return record.filterObject(spawndescriptor);
   };
 
   return ServiceUser;
