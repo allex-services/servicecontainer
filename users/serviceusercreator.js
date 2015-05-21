@@ -44,11 +44,11 @@ function createServiceUser(execlib,ParentUser){
     var state = taskRegistry.run('materializeState',{
       sink: sink
     });
+    state.setSink(state.sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
     this._onSubServiceState(state);
     defer.resolve(record);
   };
   ServiceUser.prototype._onSubServiceState = function(state){
-    state.setSink(sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
   };
   ServiceUser.prototype._instanceNameFromRecord = function(record){
     return record.instancename;
