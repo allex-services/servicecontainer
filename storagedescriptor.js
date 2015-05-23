@@ -1,5 +1,6 @@
 module.exports = {
   record:{
+    primaryKey: 'instancename',
     fields:[{
       name: 'instancename'
     },{
