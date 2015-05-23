@@ -56,10 +56,11 @@ function createServiceUser(execlib,ParentUser){
   };
   ServiceUser.prototype._onSubServiceDown = function(sinkinstancename,record){
     this.__service.subservices.remove(sinkinstancename);
+    console.log('container deleting record with instancename',sinkinstancename);
     this.__service.data.delete(filterFactory.createFromDescriptor({
       op:'eq',
       field:'instancename',
-      d:sinkinstancename
+      value:sinkinstancename
     }));
   };
   ServiceUser.prototype._instanceNameFromRecord = function(record){
