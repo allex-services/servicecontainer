@@ -26,6 +26,11 @@ function createServiceUser(execlib,ParentUser){
       defer.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
       return;
     }
+    var sink = this.__service.subservices.get(sinkinstancename);
+    if(sink){
+      defer.resolve(sink);
+      return;
+    }
     this.acquireSink(record,d);
     d.promise.done(
       this._onSinkAcquired.bind(this,defer,record),
