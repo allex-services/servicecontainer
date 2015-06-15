@@ -1,4 +1,5 @@
 function createServiceContainerServiceTester(execlib,Tester){
+  'use strict';
   var lib = execlib.lib,
       q = lib.q;
 

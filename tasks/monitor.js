@@ -1,4 +1,5 @@
 function createMonitor(execlib){
+  'use strict';
   var lib = execlib.lib,
       q = lib.q,
       execSuite = execlib.execSuite,

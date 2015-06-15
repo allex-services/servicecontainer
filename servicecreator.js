@@ -1,4 +1,5 @@
 function createServiceContainerService(execlib,ParentServicePack){
+  'use strict';
   var ParentService = ParentServicePack.Service,
     dataSuite = execlib.dataSuite,
     MemoryStorage = dataSuite.MemoryStorage;
