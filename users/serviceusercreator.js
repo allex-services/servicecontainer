@@ -29,9 +29,14 @@ function createServiceUser(execlib,ParentUser){
     }
     var sink = this.__service.subservices.get(sinkinstancename);
     if(sink){
-      defer.resolve(sink);
+      if (sink instanceof lib.Fifo){
+        sink.push(defer);
+      } else {
+        defer.resolve(sink);
+      }
       return;
     }
+    this.__service.subservices.add(sinkinstancename, new lib.Fifo());
     this.acquireSink(record,d);
     d.promise.done(
       this._onSinkAcquired.bind(this,defer,record),
@@ -41,7 +46,10 @@ function createServiceUser(execlib,ParentUser){
   ServiceUser.prototype._onSinkAcquired = function(defer,record,sink){
     var sinkinstancename = this._instanceNameFromRecord(record);
     if(sinkinstancename){
-      this.__service.subservices.add(sinkinstancename,sink);
+      var q = this.__service.subservices.replace(sinkinstancename,sink);
+      while (q.length) {
+        q.pop().resolve(sink);
+      }
       sink.destroyed.attachForSingleShot(this._onSubServiceDown.bind(this,sinkinstancename,record));
     }
     this.__service.data.create(record).done(
