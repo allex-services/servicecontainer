@@ -20,15 +20,19 @@ function createServiceUser(execlib,ParentUser){
     ParentUser.prototype.__cleanUp.call(this);
   };
   ServiceUser.prototype.spawn = function(spawndescriptor,defer){
+    if (!spawndescriptor) {
+      defer.reject(new lib.Error('NO_SPAWN_DESCRIPTOR'));
+      return;
+    }
     var d = q.defer();
     var record = this._spawnDescriptorToRecord(spawndescriptor);
     var sinkinstancename = this._instanceNameFromRecord(record);
-    if(!sinkinstancename){
+    if (!sinkinstancename) {
       defer.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
       return;
     }
     var sink = this.__service.subservices.get(sinkinstancename);
-    if(sink){
+    if (sink) {
       if (sink instanceof lib.Fifo){
         sink.push(defer);
       } else {
