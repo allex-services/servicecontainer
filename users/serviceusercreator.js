@@ -41,7 +41,7 @@ function createServiceUser(execlib,ParentUser){
       return;
     }
     this.__service.subservices.add(sinkinstancename, new lib.Fifo());
-    this.acquireSink(record,d);
+    this.acquireSink(record,spawndescriptor,d);
     d.promise.done(
       this._onSinkAcquired.bind(this,defer,record),
       defer.reject.bind(defer)
