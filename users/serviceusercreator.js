@@ -75,14 +75,17 @@ function createServiceUser(execlib,ParentUser){
   ServiceUser.prototype._onSubServiceDown = function(sinkinstancename,record){
     this.__service.subservices.remove(sinkinstancename);
     console.log('container deleting record with instancename',sinkinstancename);
-    this.__service.data.delete({
+    this.__service.data.delete(this._deleteFilterForRecord(sinkinstancename, record));
+  };
+  ServiceUser.prototype._instanceNameFromRecord = function(record) {
+    return record.get('instancename');
+  };
+  ServiceUser.prototype._deleteFilterForRecord = function (sinkinstancename, record) {
+    return {
       op:'eq',
       field:'instancename',
       value:sinkinstancename
-    });
-  };
-  ServiceUser.prototype._instanceNameFromRecord = function(record){
-    return record.get('instancename');
+    };
   };
   ServiceUser.prototype._spawnDescriptorToRecord = function(spawndescriptor){
     var record = new (dataSuite.recordSuite.Record)(this.__service.storageDescriptor.record);
