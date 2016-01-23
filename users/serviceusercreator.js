@@ -47,6 +47,27 @@ function createServiceUser(execlib,ParentUser){
       defer.reject.bind(defer)
     );
   };
+  ServiceUser.prototype.kill = function (sinkinstancename) {
+    var s = this.__service.subservices.get(sinkinstancename), d;
+    if (!s) {
+      return q(true);
+    }
+    if (s.destroyed) {
+      d = q.defer();
+      s.destroyed.attachForSingleShot(d.resolve.bind(d, true));
+      s.destroy();
+      return d.promise;
+    }
+    if (s instanceof lib.Fifo) {
+      while (s.length) {
+        s.pop().reject(new lib.Error('DYING_PREMATURELY'));
+      }
+      s.destroy();
+      this.__service.subservices.remove(sinkinstancename);
+      return q(true);
+    }
+    return q(true); //what else?
+  };
   ServiceUser.prototype._onSinkAcquired = function(defer,record,sink){
     var sinkinstancename = this._instanceNameFromRecord(record);
     if(sinkinstancename){

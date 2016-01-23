@@ -20,5 +20,9 @@ module.exports = {
         type: 'object'
       }
     }
+  }],
+  kill: [{
+    title: 'Instance name',
+    type: 'string'
   }]
 };
