@@ -75,7 +75,7 @@ function createServiceUser(execlib,ParentUser){
       while (q.length) {
         q.pop().resolve(sink);
       }
-      sink.destroyed.attachForSingleShot(this._onSubServiceDown.bind(this,sinkinstancename,record));
+      sink.destroyed.attachForSingleShot(this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record));
     }
     this.__service.data.create(record).done(
       this._onServiceRecordCreated.bind(this,defer,sink),
@@ -93,20 +93,8 @@ function createServiceUser(execlib,ParentUser){
   ServiceUser.prototype._onSubServiceState = function(state,record){
     state.setSink(state.sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
   };
-  ServiceUser.prototype._onSubServiceDown = function(sinkinstancename,record){
-    this.__service.subservices.remove(sinkinstancename);
-    console.log('container deleting record with instancename',sinkinstancename);
-    this.__service.data.delete(this._deleteFilterForRecord(sinkinstancename, record));
-  };
   ServiceUser.prototype._instanceNameFromRecord = function(record) {
     return record.get('instancename');
-  };
-  ServiceUser.prototype._deleteFilterForRecord = function (sinkinstancename, record) {
-    return {
-      op:'eq',
-      field:'instancename',
-      value:sinkinstancename
-    };
   };
   ServiceUser.prototype._spawnDescriptorToRecord = function(spawndescriptor){
     var record = new (dataSuite.recordSuite.Record)(this.__service.storageDescriptor.record);

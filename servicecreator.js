@@ -21,6 +21,18 @@ function createServiceContainerService(execlib,ParentServicePack){
   ServiceContainerService.prototype.createStorage = function(storagedescriptor){
     return new MemoryStorage(storagedescriptor);
   };
+  ServiceContainerService.prototype._onSubServiceDown = function(sinkinstancename,record){
+    this.subservices.remove(sinkinstancename);
+    console.log('container deleting record with instancename',sinkinstancename);
+    this.data.delete(this._deleteFilterForRecord(sinkinstancename, record));
+  };
+  ServiceContainerService.prototype._deleteFilterForRecord = function (sinkinstancename, record) {
+    return {
+      op:'eq',
+      field:'instancename',
+      value:sinkinstancename
+    };
+  };
   return ServiceContainerService;
 }
 
