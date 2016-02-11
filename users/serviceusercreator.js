@@ -47,13 +47,13 @@ function createServiceUser(execlib,ParentUser){
       defer.reject.bind(defer)
     );
   };
-  ServiceUser.prototype.kill = function (sinkinstancename) {
+  ServiceUser.prototype.kill = function (sinkinstancename, defer) {
     var s = this.__service.subservices.get(sinkinstancename), d;
     if (!s) {
       return q(true);
     }
     if (s.destroyed) {
-      d = q.defer();
+      d = defer || q.defer();
       s.destroyed.attachForSingleShot(d.resolve.bind(d, true));
       s.destroy();
       return d.promise;
