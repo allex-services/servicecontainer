@@ -122,8 +122,9 @@ function createMonitor(execlib){
     this.services = [];
     this.newServiceEvent = new lib.HookCollection();
     this.serviceDownEvent = new lib.HookCollection();
-    taskRegistry.run('materializeData',{
+    taskRegistry.run('materializeQuery',{
       sink: this.sink,
+      continuous: true,
       data: this.services,
       onNewRecord: this.onNewService.bind(this),
       onRecordDeletion: this.onServiceDown.bind(this)
