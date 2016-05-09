@@ -72,7 +72,7 @@ function createServiceUser(execlib,ParentUser){
     var sinkinstancename = this._instanceNameFromRecord(record);
     if(sinkinstancename){
       var q = this.__service.subservices.replace(sinkinstancename,sink);
-      while (q.length) {
+      while (q.getFifoLength()) {
         q.pop().resolve(sink);
       }
       sink.destroyed.attachForSingleShot(this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record));
