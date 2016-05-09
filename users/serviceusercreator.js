@@ -75,6 +75,7 @@ function createServiceUser(execlib,ParentUser){
       while (q.getFifoLength()) {
         q.pop().resolve(sink);
       }
+      q.destroy();
       sink.destroyed.attachForSingleShot(this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record));
     }
     this.__service.data.create(record).done(
