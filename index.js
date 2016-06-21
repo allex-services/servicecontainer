@@ -1,32 +1,17 @@
 function createServicePack(execlib){
   'use strict';
-  var lib = execlib.lib,
-    q = lib.q,
-    execSuite = execlib.execSuite,
-    d = q.defer();
 
-  execSuite.registry.register('allex_dataservice').done(
-    realCreator.bind(null,d),
-    d.reject.bind(d)
-  );
-
-  function realCreator(defer, ParentServicePack) {
-    var ret = require('./clientside')(execlib, ParentServicePack);
-    ret.Service = require('./servicecreator')(execlib,ParentServicePack);
-    defer.resolve(ret);
-    /*
-    defer.resolve({
-      Service: require('./servicecreator')(execlib,ParentServicePack),
-      SinkMap: require('./sinkmapcreator')(execlib,ParentServicePack),
-      Tasks: [{
-        name: 'monitorSubServices',
-        klass: require('./tasks/monitor')(execlib)
-      }]
-    });
-    */
-  }
-
-  return d.promise;
+  return {
+    service: {
+      dependencies: ['allex:data']
+    },
+    sinkmap: {
+      dependencies: ['allex:data']
+    },
+    tasks: {
+      dependencies: []
+    }
+  };
 }
 
 module.exports = createServicePack;
