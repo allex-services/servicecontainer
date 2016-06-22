@@ -20,17 +20,28 @@ function createServiceUser(execlib,ParentUser){
     ParentUser.prototype.__cleanUp.call(this);
   };
   ServiceUser.prototype.spawn = function(spawndescriptor,defer){
+    var record, sinkinstancename, busy, ret;
     if (!spawndescriptor) {
       defer.reject(new lib.Error('NO_SPAWN_DESCRIPTOR'));
       return;
     }
-    var d = q.defer();
-    var record = this._spawnDescriptorToRecord(spawndescriptor);
-    var sinkinstancename = this._instanceNameFromRecord(record);
+    record = this._spawnDescriptorToRecord(spawndescriptor);
+    sinkinstancename = this._instanceNameFromRecord(record);
     if (!sinkinstancename) {
-      defer.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
-      return;
+      return q.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
     }
+    busy = this.__service.subservices.busy(sinkinstancename);
+    if (!busy) {
+      ret = this.__service.subservices.waitFor(sinkinstancename);
+      this.acquireSink(record, spawndescriptor).then(
+        this._onSinkAcquired.bind(this, record),
+        this.__service.subservices.fail.bind(this.__service.subservices)
+      );
+    } else {
+      ret = this.__service.subservices.waitFor(sinkinstancename);
+    }
+    return ret;
+    /*
     var sink = this.__service.subservices.get(sinkinstancename);
     if (sink) {
       if (sink instanceof lib.Fifo){
@@ -40,12 +51,13 @@ function createServiceUser(execlib,ParentUser){
       }
       return;
     }
-    this.__service.subservices.add(sinkinstancename, new lib.Fifo());
+    //this.__service.subservices.add(sinkinstancename, new lib.Fifo());
     this.acquireSink(record,spawndescriptor,d);
     d.promise.done(
       this._onSinkAcquired.bind(this,defer,record),
       defer.reject.bind(defer)
     );
+    */
   };
   function rejecter (d) {
     d.reject(new lib.Error('DYING_PREMATURELY'));
@@ -64,7 +76,7 @@ function createServiceUser(execlib,ParentUser){
     if (s instanceof lib.Fifo) {
       s.drain(rejecter);
       s.destroy();
-      this.__service.subservices.remove(sinkinstancename);
+      this.__service.subservices.unregister(sinkinstancename);
       return q(true);
     }
     return q(true); //what else?
@@ -72,26 +84,25 @@ function createServiceUser(execlib,ParentUser){
   function resolver(sink, defer) {
     defer.resolve(sink);
   }
-  ServiceUser.prototype._onSinkAcquired = function(defer,record,sink){
+  ServiceUser.prototype._onSinkAcquired = function(record,sink){
     var sinkinstancename = this._instanceNameFromRecord(record);
     if(sinkinstancename){
-      var q = this.__service.subservices.replace(sinkinstancename,sink);
-      q.drain(resolver.bind(null, sink));
-      q.destroy();
-      sink.destroyed.attachForSingleShot(this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record));
+      this.__service.subservices.registerDestroyable(
+        sinkinstancename,sink,
+        this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record)
+      );
     }
-    this.__service.data.create(record).done(
-      this._onServiceRecordCreated.bind(this,defer,sink),
-      defer.reject.bind(defer)
+    return this.__service.data.create(record).then(
+      this._onServiceRecordCreated.bind(this,sink)
     );
   };
-  ServiceUser.prototype._onServiceRecordCreated = function(defer,sink,record){
+  ServiceUser.prototype._onServiceRecordCreated = function(sink,record){
     //sink.consumeChannel('s',sink.extendTo(this.__service.data.stateStreamFilterForRecord(record))); //extendTo might be an overkill here?
     var state = taskRegistry.run('materializeState',{
       sink: sink
     });
     this._onSubServiceState(state,record);
-    defer.resolve(sink);
+    return q(sink);
   };
   ServiceUser.prototype._onSubServiceState = function(state,record){
     state.setSink(state.sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));

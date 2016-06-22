@@ -21,7 +21,7 @@ function createServiceContainerService(execlib,ParentService){
     return new MemoryStorage(storagedescriptor);
   };
   ServiceContainerService.prototype._onSubServiceDown = function(sinkinstancename,record){
-    this.subservices.remove(sinkinstancename);
+    this.subservices.unregister(sinkinstancename);
     console.log('container deleting record with instancename',sinkinstancename);
     this.data.delete(this._deleteFilterForRecord(sinkinstancename, record));
   };
