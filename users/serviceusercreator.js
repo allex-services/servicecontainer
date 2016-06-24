@@ -3,6 +3,7 @@ function createServiceUser(execlib,ParentUser){
 
   var lib = execlib.lib,
       q = lib.q,
+      qlib = lib.qlib,
       execSuite = execlib.execSuite,
       taskRegistry = execSuite.taskRegistry,
       dataSuite = execlib.dataSuite,
@@ -28,7 +29,7 @@ function createServiceUser(execlib,ParentUser){
     record = this._spawnDescriptorToRecord(spawndescriptor);
     sinkinstancename = this._instanceNameFromRecord(record);
     if (!sinkinstancename) {
-      return q.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
+      defer.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
     }
     busy = this.__service.subservices.busy(sinkinstancename);
     if (!busy) {
@@ -40,24 +41,7 @@ function createServiceUser(execlib,ParentUser){
     } else {
       ret = this.__service.subservices.waitFor(sinkinstancename);
     }
-    return ret;
-    /*
-    var sink = this.__service.subservices.get(sinkinstancename);
-    if (sink) {
-      if (sink instanceof lib.Fifo){
-        sink.push(defer);
-      } else {
-        defer.resolve(sink);
-      }
-      return;
-    }
-    //this.__service.subservices.add(sinkinstancename, new lib.Fifo());
-    this.acquireSink(record,spawndescriptor,d);
-    d.promise.done(
-      this._onSinkAcquired.bind(this,defer,record),
-      defer.reject.bind(defer)
-    );
-    */
+    qlib.promise2defer(ret, defer);
   };
   function rejecter (d) {
     d.reject(new lib.Error('DYING_PREMATURELY'));
