@@ -22,7 +22,6 @@ function createServiceContainerService(execlib,ParentService){
   };
   ServiceContainerService.prototype._onSubServiceDown = function(sinkinstancename,record){
     this.subservices.unregister(sinkinstancename);
-    console.log('container deleting record with instancename',sinkinstancename);
     this.data.delete(this._deleteFilterForRecord(sinkinstancename, record));
   };
   ServiceContainerService.prototype._deleteFilterForRecord = function (sinkinstancename, record) {
