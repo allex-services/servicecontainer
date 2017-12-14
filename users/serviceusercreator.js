@@ -21,6 +21,7 @@ function createServiceUser(execlib,ParentUser){
     ParentUser.prototype.__cleanUp.call(this);
   };
   ServiceUser.prototype.spawn = function(spawndescriptor,defer){
+    //on success, this method resolves with a Sink instance, making it unusable for remote calls
     var record, sinkinstancename, busy, ret;
     if (!spawndescriptor) {
       defer.reject(new lib.Error('NO_SPAWN_DESCRIPTOR'));
@@ -30,6 +31,7 @@ function createServiceUser(execlib,ParentUser){
     sinkinstancename = this._instanceNameFromRecord(record);
     if (!sinkinstancename) {
       defer.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
+      return;
     }
     busy = this.__service.subservices.busy(sinkinstancename);
     if (!busy) {
