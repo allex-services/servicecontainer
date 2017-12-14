@@ -24,5 +24,9 @@ module.exports = {
   kill: [{
     title: 'Instance name',
     type: 'string'
+  }],
+  restoreFromDB: [{
+    title: 'DB Record',
+    type: 'object'
   }]
 };

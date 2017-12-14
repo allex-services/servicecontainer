@@ -21,6 +21,14 @@ function createServiceUser(execlib,ParentUser){
     ParentUser.prototype.__cleanUp.call(this);
   };
   ServiceUser.prototype.spawn = function(spawndescriptor,defer){
+    if (!(this.__service && this.__service.restoreDefer)) {
+      return q.reject(new lib.Error('ALREADY_DYING', 'Service is already destructed'));
+    }
+    return this.__service.restoreDefer.promise.then(
+      this._spawn_or_restore.bind(this, spawndescriptor, false, defer)
+    );
+  };
+  ServiceUser.prototype._spawn_or_restore = function (spawndescriptor, restore, defer) {
     //on success, this method resolves with a Sink instance, making it unusable for remote calls
     var record, sinkinstancename, busy, ret;
     if (!spawndescriptor) {
@@ -37,7 +45,7 @@ function createServiceUser(execlib,ParentUser){
     if (!busy) {
       ret = this.__service.subservices.waitFor(sinkinstancename);
       this.acquireSink(record, spawndescriptor).then(
-        this._onSinkAcquired.bind(this, record),
+        this._onSinkAcquired.bind(this, record, restore),
         this.__service.subservices.fail.bind(this.__service.subservices)
       );
     } else {
@@ -70,7 +78,7 @@ function createServiceUser(execlib,ParentUser){
   function resolver(sink, defer) {
     defer.resolve(sink);
   }
-  ServiceUser.prototype._onSinkAcquired = function(record,sink){
+  ServiceUser.prototype._onSinkAcquired = function(record,restore,sink){
     var sinkinstancename = this._instanceNameFromRecord(record);
     if(sinkinstancename){
       this.__service.subservices.registerDestroyable(
@@ -78,7 +86,10 @@ function createServiceUser(execlib,ParentUser){
         this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record)
       );
     }
-    return this.__service.data.create(record).then(
+    return restore ? 
+    this._onServiceRecordCreated(this,sink)
+    :
+    this.__service.data.create(record).then(
       this._onServiceRecordCreated.bind(this,sink)
     );
   };
@@ -99,6 +110,12 @@ function createServiceUser(execlib,ParentUser){
   ServiceUser.prototype._spawnDescriptorToRecord = function(spawndescriptor){
     var record = new (dataSuite.recordSuite.Record)(this.__service.storageDescriptor.record);
     return record.filterObject(spawndescriptor);
+  };
+  ServiceUser.prototype.restoreFromDB = function (record, defer) {
+    return this._spawn_or_restore(this._recordToSpawnDescriptor(record), true, defer);
+  };
+  ServiceUser.prototype._recordToSpawnDescriptor = function (record) {
+    throw new lib.Error('NOT_IMPLEMENTED', 'Base allex_servicecontainerservice Service does not implement _recordToSpawnDescriptor');
   };
 
   return ServiceUser;
