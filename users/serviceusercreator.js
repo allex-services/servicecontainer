@@ -87,7 +87,7 @@ function createServiceUser(execlib,ParentUser){
       );
     }
     return restore ? 
-    this._onServiceRecordCreated(this,sink)
+    this._onServiceRecordCreated(sink, record)
     :
     this.__service.data.create(record).then(
       this._onServiceRecordCreated.bind(this,sink)
