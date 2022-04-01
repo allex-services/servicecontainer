@@ -38,6 +38,9 @@ function createMonitor(execlib){
     this.newServiceEvent.fire(servicerecord);
   };
   SubServiceMonitor.prototype.onServiceDown = function(servicerecord){
+    if (!this.serviceDownEvent) {
+      return;
+    }
     this.log('service down',servicerecord);
     this.serviceDownEvent.fire(servicerecord);
   };
