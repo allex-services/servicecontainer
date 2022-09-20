@@ -46,6 +46,9 @@ function createServiceContainerService(execlib,ParentService){
     this.subservices.unregister(sinkinstancename);
     this.data.delete(this._deleteFilterForRecord(sinkinstancename, record));
   };
+  ServiceContainerService.prototype.onRunTime = function (type, record) {
+    var a = 5;
+  };
   ServiceContainerService.prototype._deleteFilterForRecord = function (sinkinstancename, record) {
     return {
       op:'eq',

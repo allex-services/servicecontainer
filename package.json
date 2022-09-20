@@ -1,6 +1,6 @@
 {
   "name": "allex_servicecontainerservice",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "ServiceContainerService",
   "main": "index.js",
   "scripts": {

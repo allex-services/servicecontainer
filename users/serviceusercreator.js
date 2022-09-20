@@ -21,16 +21,20 @@ function createServiceUser(execlib,ParentUser){
     ParentUser.prototype.__cleanUp.call(this);
   };
   ServiceUser.prototype.spawn = function(spawndescriptor,defer){
+    var ret;
     if (!(this.__service && this.__service.restoreDefer)) {
       return q.reject(new lib.Error('ALREADY_DYING', 'Service is already destructed'));
     }
-    return this.__service.restoreDefer.promise.then(
-      this._spawn_or_restore.bind(this, spawndescriptor, false, defer)
+    ret = this.__service.restoreDefer.promise.then(
+      this._spawn_or_restore.bind(this, spawndescriptor, false)
     );
+    spawndescriptor = null;
+    qlib.promise2defer(ret, defer);
+    //return ret;
   };
-  ServiceUser.prototype._spawn_or_restore = function (spawndescriptor, restore, defer) {
+  ServiceUser.prototype._spawn_or_restore = function (spawndescriptor, restore) {
     //on success, this method resolves with a Sink instance, making it unusable for remote calls
-    var record, sinkinstancename, busy, ret;
+    var record, sinkinstancename, ret;
     if (!spawndescriptor) {
       defer.reject(new lib.Error('NO_SPAWN_DESCRIPTOR'));
       return;
@@ -41,20 +45,27 @@ function createServiceUser(execlib,ParentUser){
       defer.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
       return;
     }
-    busy = this.__service.subservices.busy(sinkinstancename);
-    if (!busy) {
-      ret = this.__service.subservices.waitFor(sinkinstancename);
-      this.acquireSink(record, spawndescriptor).then(
-        this._onSinkAcquired.bind(this, record, restore),
-        this.__service.subservices.fail.bind(this.__service.subservices)
-      );
-    } else {
-      ret = this.__service.subservices.waitFor(sinkinstancename);
-    }
-    qlib.promise2defer(ret, defer);
+    ret = this.__service.subservices.queueCreation(
+      sinkinstancename,
+      actualCreator.bind(this, spawndescriptor, restore, record),
+      this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record)
+    );
+    spawndescriptor = null;
+    restore = null;
+    record = null;
+    return ret;
   };
   function rejecter (d) {
     d.reject(new lib.Error('DYING_PREMATURELY'));
+  }
+  //static
+  function actualCreator (spawndescriptor, restore, record) {
+    var ret = this.acquireSink(record, spawndescriptor).then(
+      this._onSinkAcquired.bind(this, record, restore)
+    );
+    record = null;
+    restore = null;
+    return ret;
   }
   ServiceUser.prototype.kill = function (sinkinstancename, defer) {
     var s = this.__service.subservices.get(sinkinstancename), d;
@@ -79,13 +90,6 @@ function createServiceUser(execlib,ParentUser){
     defer.resolve(sink);
   }
   ServiceUser.prototype._onSinkAcquired = function(record,restore,sink){
-    var sinkinstancename = this._instanceNameFromRecord(record);
-    if(sinkinstancename){
-      this.__service.subservices.registerDestroyable(
-        sinkinstancename,sink,
-        this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record)
-      );
-    }
     return restore ? 
     this._onServiceRecordCreated(sink, record)
     :
@@ -95,11 +99,15 @@ function createServiceUser(execlib,ParentUser){
   };
   ServiceUser.prototype._onServiceRecordCreated = function(sink,record){
     //sink.consumeChannel('s',sink.extendTo(this.__service.data.stateStreamFilterForRecord(record))); //extendTo might be an overkill here?
+    if (!this.__service) {
+      sink.destroy();
+      return;
+    }
     var state = taskRegistry.run('materializeState',{
       sink: sink
     });
     this._onSubServiceState(state,record);
-    return q(sink);
+    return sink;
   };
   ServiceUser.prototype._onSubServiceState = function(state,record){
     state.setSink(state.sink.extendTo(this.__service.data.stateStreamFilterForRecord(record)));
@@ -112,7 +120,7 @@ function createServiceUser(execlib,ParentUser){
     return record.filterObject(spawndescriptor);
   };
   ServiceUser.prototype.restoreFromDB = function (record, defer) {
-    return this._spawn_or_restore(this._recordToSpawnDescriptor(record), true, defer);
+    qlib.promise2defer(this._spawn_or_restore(this._recordToSpawnDescriptor(record), true), defer);
   };
   ServiceUser.prototype._recordToSpawnDescriptor = function (record) {
     throw new lib.Error('NOT_IMPLEMENTED', 'Base allex_servicecontainerservice Service does not implement _recordToSpawnDescriptor');
