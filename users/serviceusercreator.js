@@ -34,24 +34,25 @@ function createServiceUser(execlib,ParentUser){
   };
   ServiceUser.prototype._spawn_or_restore = function (spawndescriptor, restore) {
     //on success, this method resolves with a Sink instance, making it unusable for remote calls
-    var record, sinkinstancename, ret;
+    var myservice, record, sinkinstancename, ret;
     if (!spawndescriptor) {
-      defer.reject(new lib.Error('NO_SPAWN_DESCRIPTOR'));
-      return;
+      return q.reject(new lib.Error('NO_SPAWN_DESCRIPTOR'));
     }
+    myservice = this.__service;
     record = this._spawnDescriptorToRecord(spawndescriptor);
     sinkinstancename = this._instanceNameFromRecord(record);
     if (!sinkinstancename) {
-      defer.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
-      return;
+      return q.reject(new lib.Error('CANNOT_SPAWN_NAMELESS_SUBSERVICE'));
     }
     ret = this.__service.subservices.queueCreation(
       sinkinstancename,
       actualCreator.bind(this, spawndescriptor, restore, record),
-      this.__service._onSubServiceDown.bind(this.__service,sinkinstancename,record)
+      myservice._onSubServiceDown.bind(myservice,sinkinstancename,record)
     );
+    myservice = null;
     spawndescriptor = null;
     restore = null;
+    sinkinstancename = null;
     record = null;
     return ret;
   };
